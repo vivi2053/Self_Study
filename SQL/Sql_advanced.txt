@@ -1,0 +1,672 @@
+Whatever works with mysql
+
+Displaying only distinct rows
+You can place [DISTICT | ALL | DISTINCTROW] after SELECT
+
+SELECT DISTINCT NAME FROM CITY WHERE ID%2=0
+
+============================================================================================
+Displaying the with shortest and longest length and then chosen alphabetically
+
+(SELECT CITY, LENGTH(CITY)
+FROM STATION
+ORDER BY LENGTH(CITY) ASC, CITY ASC LIMIT 1)
+UNION
+(SELECT CITY, LENGTH(CITY)
+FROM STATION
+ORDER BY LENGTH(CITY) DESC, CITY ASC LIMIT 1)
+
+============================================================================================
+Display distinct cities starting with vowels
+SELECT DISTINCT CITY 
+FROM STATION
+WHERE CITY REGEXP "^[aeiou].*"
+
+SELECT DISTINCT CITY 
+FROM STATION
+WHERE CITY LOWER(SUBSTR(CITY, 1, 1)) in ('a', 'e', 'i', 'o', 'u')
+
+============================================================================================
+
+Display cities ending in vowels
+SELECT DISTINCT CITY
+FROM STATION
+WHERE LOWER(SUBSTR(CITY, LENGTH(CITY), 1)) IN ('a', 'e', 'i', 'o', 'u');
+
+SELECT DISTINCT CITY FROM STATION WHERE RIGHT(CITY,1) IN ('a','e','i','o','u');
+
+SELECT DISTINCT CITY 
+FROM STATION
+WHERE CITY REGEXP ".*[aeiou]$"
+
+=============================================================================================
+
+City names starting and ending with vowels
+
+SELECT DISTINCT CITY 
+FROM STATION
+WHERE CITY REGEXP "^[aeiou].*[aeiou]$"
+# does not work with single vowels although the start and end is technically vowel
+
+select distinct city from station 
+where left(city,1) in ('a','e','i','o','u') 
+and right(city, 1) in ('a','e','i','o','u')
+
+=============================================================================================
+
+City that do not start with vowels
+
+SELECT DISTINCT CITY
+FROM STATION
+WHERE CITY REGEXP "^[^aeiou]"
+
+select distinct city from station 
+where left(city,1) not in ('a','e','i','o','u')
+
+=============================================================================================
+
+Cities that do not end in vowels
+
+SELECT DISTINCT CITY
+FROM STATION
+WHERE CITY REGEXP "[^aeiou]$"
+
+select distinct city from station 
+where right(city,1) not in ('a','e','i','o','u')
+=============================================================================================
+cities that dont start with vowel or dont end with vowel
+
+select distinct city from station 
+where left(city,1) not in ('a','e','i','o','u') 
+or right(city,1) not in ('a','e','i','o','u') 
+
+select distinct city from station 
+where city regexp '^[^aeiou]|[^aeiou]$'
+=============================================================================================
+cities that dont start with vowel and dont end with vowel
+
+SELECT DISTINCT CITY
+FROM STATION
+WHERE CITY REGEXP "^[^aeiou].*[^aeiou]$"
+
+select distinct city from station 
+where left(city,1) not in ('a','e','i','o','u') 
+and right(city,1) not in ('a','e','i','o','u') 
+=============================================================================================
+Display students with marks, order by last three chars of the name, and then by the id
+
+SELECT NAME 
+FROM STUDENTS
+WHERE MARKS > 75
+ORDER BY SUBSTR(NAME, LENGTH(NAME)-2, 3), ID ASC
+
+SELECT NAME 
+FROM STUDENTS
+WHERE MARKS > 75
+ORDER BY RIGHT(NAME, 3), ID ASC
+
+=============================================================================================
+Name in alphabetical order
+
+SELECT NAME
+FROM EMPLOYEE
+ORDER BY NAME ASC
+
+with some conditions
+SELECT NAME
+FROM EMPLOYEE
+WHERE SALARY > 2000
+AND MONTHS < 10
+ORDER BY EMPLOYEE_ID ASC
+
+
+=============================================================================================
+
+Calculate median of column
+
+SET @N := 0;
+SELECT COUNT(*) FROM STATION INTO @TOTAL;
+SELECT
+    ROUND(AVG(A.LAT_N), 4)
+FROM (SELECT @N := @N +1 AS ROW_ID, LAT_N FROM STATION ORDER BY LAT_N) A
+WHERE
+    CASE WHEN MOD(@TOTAL, 2) = 0 
+            THEN A.ROW_ID IN (@TOTAL/2, (@TOTAL/2+1))
+            ELSE A.ROW_ID = (@TOTAL+1)/2
+    END
+
+=============================================================================================    
+Traingles classification based on the sides
+
+SELECT 
+    CASE
+        WHEN A = B and B = C THEN 'Equilateral'
+        WHEN A+B <= C or B+C <= A or C+A <= B THEN 'Not A Triangle'
+        WHEN A=B or B=C or C=A THEN 'Isosceles'
+        ELSE 'Scalene'
+    END
+FROM TRIANGLES
+
+=============================================================================================
+
+https://www.hackerrank.com/challenges/the-pads/problem
+
+SELECT CONCAT(NAME, '(', LEFT(OCCUPATION, 1), ')')
+FROM OCCUPATIONS
+ORDER BY NAME;
+
+SELECT CONCAT('There are a total of ',COUNT(*), ' ',LOWER(OCCUPATION), 's.')
+FROM OCCUPATIONS
+GROUP BY OCCUPATION
+ORDER BY COUNT(*) ASC, OCCUPATION ASC
+=============================================================================================
+
+https://www.hackerrank.com/challenges/occupations/problem
+
+set @r1=0, @r2=0, @r3=0, @r4=0;
+SELECT min(Doctor), min(Professor), min(Singer), min(Actor)
+FROM (SELECT
+    case when Occupation='Doctor' then (@r1:=@r1+1)
+    when Occupation='Professor' then (@r2:=@r2+1)
+    when Occupation='Singer' then (@r3:=@r3+1)
+    when Occupation='Actor' then (@r4:=@r4+1) end as RowNumber,
+    case when Occupation='Doctor' then Name end as Doctor,
+    case when Occupation='Professor' then Name end as Professor,
+    case when Occupation='Singer' then Name end as Singer,
+    case when Occupation='Actor' then Name end as Actor
+FROM OCCUPATIONS
+order by Name) temp
+group by RowNumber
+
+=============================================================================================
+From BST(Node value, Parent value) finding what nodes are root, inner and leaf 
+
+SELECT
+    CASE WHEN P IS NULL THEN CONCAT(N, ' Root')
+    WHEN N IN (SELECT DISTINCT(P) FROM BST) THEN CONCAT(N, ' Inner')
+    ELSE CONCAT(N, ' Leaf')
+    END
+FROM BST
+ORDER BY N
+=============================================================================================
+
+https://www.hackerrank.com/challenges/the-company/problem
+!!!!!!!!DOES NOT WORK!!!!!!!!!!!!!!
+SELECT  c.company_code,
+    c.founder, 
+    count(distinct l.lead_manager_code),  
+    count(distinct s.senior_manager_code),  
+    count(distinct m.manager_code), 
+    count(distinct e.employee_code)
+from Company c, Lead_Manager l, Senior_Manager s, Manager m, Employee e  
+Where 
+    c.company_code = l.company_code 
+    and l.lead_manager_code = s.lead_manager_code
+    and s.senior_manager_code = m. senior_manager_code
+    and m.manager_code = e.manager_code
+group by c.company_code
+order by c.company_code
+
+Upper query does not run
+
+select c.company_code, c.founder, 
+    (select count(distinct lead_manager_code) from Lead_Manager where company_code = c.company_code),
+    (select count(distinct senior_manager_code) from Senior_Manager where company_code = c.company_code),
+    (select count(distinct manager_code) from Manager where company_code=c.company_code),
+    (select count(distinct employee_code) from Employee where company_code=c.company_code)
+From Company c
+order by c.company_code
+
+This one runs
+=============================================================================================
+
+
+AGGREGATIONS
+
+
+=============================================================================================
+
+Population of all cities in california district
+
+SELECT SUM(POPULATION)
+FROM CITY 
+WHERE DISTRICT = 'California'
+
+=============================================================================================
+
+Average population of a city in california district
+
+SELECT AVG(POPULATION)
+FROM CITY 
+WHERE DISTRICT = 'California'
+=============================================================================================
+
+Average population Rounded down
+
+SELECT FLOOR(AVG(POPULATION))
+FROM CITY 
+=============================================================================================
+
+Population of all japanese cities
+
+SELECT SUM(POPULATION)
+FROM CITY 
+WHERE COUNTRYCODE = 'JPN'
+=============================================================================================
+
+difference between max and min population
+
+SELECT  MAX(POPULATION)- MIN(POPULATION)
+FROM CITY 
+=============================================================================================
+
+https://www.hackerrank.com/challenges/the-blunder/problem
+
+SELECT CEIL(AVG(Salary) - AVG(REPLACE(Salary, '0', '')))
+FROM Employees 
+=============================================================================================
+
+https://www.hackerrank.com/challenges/earnings-of-employees/problem
+
+SELECT salary * months AS earnings, COUNT(*)
+FROM Employee
+GROUP BY earnings
+ORDER BY earnings DESC
+LIMIT 1;
+
+=============================================================================================
+
+aggregations with condition
+
+SELECT ROUND(SUM(LAT_N), 4)
+FROM STATION
+WHERE LAT_N > 38.7880 and LAT_N < 137.2345
+
+SELECT ROUND(MAX(LAT_N), 4)
+FROM STATION
+WHERE LAT_N < 137.2345
+
+SELECT ROUND(LONG_W, 4)
+FROM STATION
+WHERE LAT_N < 137.2345
+ORDER BY LAT_N DESC LIMIT 1
+
+SELECT ROUND(LONG_W, 4)
+FROM STATION
+WHERE LAT_N > 38.7780
+ORDER BY LAT_N ASC LIMIT 1
+
+Manhattan distance between most northwest to least northwest
+SELECT ROUND((MAX(LAT_N)-MIN(LAT_N)) +  (MAX(LONG_W)-MIN(LONG_W)), 4)
+FROM STATION
+
+Euclidean distance between most northwest to least northwest
+SELECT ROUND(SQRT(POWER(MAX(LAT_N)-MIN(LAT_N), 2) +  POWER(MAX(LONG_W)-MIN(LONG_W),2)), 4)
+FROM STATION
+
+
+=============================================================================================
+
+
+BASIC JOIN
+
+
+=============================================================================================
+
+sum of population of all the cities in Asia
+
+SELECT SUM(CITY.POPULATION) 
+FROM COUNTRY
+INNER JOIN CITY ON COUNTRY.CODE = CITY.COUNTRYCODE
+WHERE CONTINENT = 'Asia'
+
+cities in africa
+SELECT CITY.NAME
+FROM COUNTRY
+INNER JOIN CITY ON COUNTRY.CODE = CITY.COUNTRYCODE
+WHERE CONTINENT = 'Africa'
+
+
+Average city population in each continent
+SELECT CONTINENT, FLOOR(AVG(CITY.POPULATION))
+FROM COUNTRY
+INNER JOIN CITY ON COUNTRY.CODE = CITY.COUNTRYCODE
+GROUP BY CONTINENT
+
+=============================================================================================
+
+
+https://www.hackerrank.com/challenges/the-report/problem?h_r=next-challenge&h_v=zen&h_r=next-challenge&h_v=zen
+
+SELECT CASE WHEN GRADE>=8 THEN Name ELSE 'NULL' END, Grade, Marks
+FROM Students
+CROSS JOIN Grades
+WHERE Min_Mark <= Marks and Marks <= Max_Mark
+ORDER BY Grade DESC, Name Asc
+
+SELECT IF(GRADE < 8, NULL, NAME), Grade, Marks
+FROM Students JOIN Grades
+WHERE Marks Min_Mark BETWEEN Max_Mark
+ORDER BY Grade DESC, Name
+
+
+Vipul's original solution
+SELECT IF(GRADE < 8, NULL, NAME), Grade, Marks
+FROM Students JOIN Grades ON Min_Mark <= Marks and Marks <= Max_Mark
+ORDER BY Grade DESC, Name, Marks 
+=============================================================================================
+
+https://www.hackerrank.com/challenges/full-score/problem
+
+SELECT h.hacker_id, h.name
+FROM Hackers h JOIN Submissions s on h.hacker_id = s.hacker_id JOIN Challenges c on s.challenge_id = c.challenge_id JOIN Difficulty d on c.difficulty_level = d.difficulty_level
+WHERE s.score = d.score and c.difficulty_level = d.difficulty_level
+GROUP BY h.hacker_id, h.name
+HAVING count(s.hacker_id) > 1
+ORDER BY count(s.hacker_id) desc, s.hacker_id asc
+
+Vipul's original solution
+SELECT h.hacker_id, h.name
+FROM Challenges c JOIN Submissions s ON c.challenge_id = s.challenge_id
+JOIN Difficulty d ON c.difficulty_level = d.difficulty_level
+JOIN Hackers h ON s.hacker_id = h.hacker_id
+WHERE s.score = d.score
+GROUP BY h.hacker_id, h.name
+HAVING count(s.submission_id) > 1
+ORDER BY count(s.submission_id) DESC, h.hacker_id
+=============================================================================================
+
+Difficult problem
+https://www.hackerrank.com/challenges/harry-potter-and-wands/problem
+
+SELECT w.id, wp.age, w.coins_needed, w.power
+FROM Wands w JOIN Wands_Property wp on w.code = wp.code
+WHERE wp.is_evil=0 and w.coins_needed = (select min(w1.coins_needed) from Wands w1 join Wands_property wp1 on w1.code = wp1.code where wp.age = wp1.age and w1.power = w.power)
+ORDER BY w.power DESC, wp.age DESC
+=============================================================================================
+
+Difficult problem
+https://www.hackerrank.com/challenges/challenges/problem
+
+SELECT h.hacker_id, h.name, COUNT(c.challenge_id) AS total FROM challenges c
+INNER JOIN hackers h
+ON h.hacker_id= c.hacker_id
+GROUP BY h.hacker_id, h.name 
+HAVING total=
+(SELECT  COUNT(c1.challenge_id) FROM Challenges c1
+GROUP BY c1.hacker_id
+ORDER BY COUNT(c1.challenge_id) desc limit 1)
+OR
+total IN
+(SELECT c2.cnt FROM (SELECT count(*) as cnt FROM Challenges GROUP BY hacker_id) c2 GROUP BY c2.cnt HAVING count(c2.cnt)=1)
+ORDER BY total DESC, h.hacker_id ASC
+
+=============================================================================================
+
+Difficult problem (did it myself) 
+https://www.hackerrank.com/challenges/contest-leaderboard/problem?h_r=next-challenge&h_v=zen
+SELECT t.hacker_id, t.name, SUM(t.max_score) as total
+FROM (SELECT h.hacker_id, h.name, s.challenge_id, max(s.score) as max_score
+FROM Hackers h INNER JOIN Submissions s on h.hacker_id = s.hacker_id
+GROUP BY h.hacker_id, h.name, s.challenge_id) t
+GROUP BY t.hacker_id, t.name
+HAVING total != 0
+ORDER BY total DESC, t.hacker_id ASC
+
+Why this not working
+SELECT h.hacker_id, h.name, SUM(s.score) as total
+FROM Hackers h JOIN Submissions s on h.hacker_id = s.hacker_id
+WHERE s.score = (SELECT MAX(s1.score) FROM Submissions s1 JOIN Hackers h1 on h1.hacker_id = s1.hacker_id WHERE s.challenge_id = s1.challenge_id and h.hacker_id = h1.hacker_id)
+GROUP BY h.hacker_id, h.name
+HAVING total > 0
+ORDER BY total DESC, h.hacker_id ASC
+
+1. 76971 Ashley 760 
+182. 14891 Walter 17 
+=============================================================================================
+
+Advanced Join
+
+=============================================================================================
+
+SELECT  con.contest_id
+        , con.hacker_id
+        , con.name
+        , SUM(total_submissions)
+        , sum(total_accepted_submissions)
+        , sum(total_views)
+        , sum(total_unique_views)
+FROM Contests con
+INNER JOIN Colleges col
+    ON con.contest_id = col.contest_id
+INNER JOIN Challenges cha
+    ON cha.college_id = col.college_id
+LEFT JOIN (SELECT challenge_id,
+    sum(total_views) as total_views,
+    sum(total_unique_views) as total_unique_views
+FROM View_Stats 
+GROUP BY challenge_id) vs
+    ON vs.challenge_id = cha.challenge_id
+LEFT JOIN (
+SELECT challenge_id,
+    sum(total_submissions) as total_submissions,
+    sum(total_accepted_submissions) as total_accepted_submissions
+FROM Submission_Stats 
+GROUP BY challenge_id) ss
+    ON ss.challenge_id = cha.challenge_id
+GROUP BY con.contest_id,con.hacker_id,con.name
+HAVING (SUM(total_submissions)
+        +sum(total_accepted_submissions)
+        +sum(total_views)
+        +sum(total_unique_views)) <> 0
+ORDER BY con.contest_ID
+
+=============================================================================================
+
+Don't understand at all
+https://www.hackerrank.com/challenges/sql-projects/problem
+
+set sql_mode = '';
+SELECT Start_Date, End_Date
+FROM 
+    (SELECT Start_Date FROM Projects WHERE Start_Date NOT IN (SELECT End_Date FROM Projects)) a,
+    (SELECT End_Date FROM Projects WHERE End_Date NOT IN (SELECT Start_Date FROM Projects)) b 
+WHERE Start_Date < End_Date
+GROUP BY Start_Date
+ORDER BY DATEDIFF(End_Date, Start_Date), Start_Date
+
+=============================================================================================
+
+
+Query names of people whose friends earn more than them (Did it myself)
+https://www.hackerrank.com/challenges/placements/problem?h_r=next-challenge&h_v=zen
+SELECT s.Name
+FROM Students s JOIN Friends f on s.ID = f.ID 
+    JOIN Packages p on s.ID = p.ID 
+    JOIN (SELECT ID, Salary as Friend_Salary FROM Packages) fs on fs.ID = f.Friend_ID
+WHERE fs.Friend_Salary > p.salary
+ORDER BY fs.Friend_Salary 
+
+Select S.Name
+From ( Students S join Friends F Using(ID)
+       join Packages P1 on S.ID=P1.ID
+       join Packages P2 on F.Friend_ID=P2.ID)
+Where P2.Salary > P1.Salary
+Order By P2.Salary;
+
+=============================================================================================
+
+Finding symmetric points
+Vipul's original solution 
+
+SELECT f1.X, f1.Y
+FROM Functions f1
+INNER JOIN Functions f2 on f1.X = f2.Y AND f1.Y = f2.X
+GROUP BY f1.X, f1.Y
+HAVING COUNT(f1.X) > 1 OR f1.X<f1.Y
+ORDER BY f1.X
+
+
+
+=============================================================================================
+SELECT cs. contest_id, cs.hacker_id, cs.name, SUM(Sub_Stats.tot_subs) as tots_subs, SUM(Sub_Stats.tot_acc_subs) as tots_acc_subs, 
+SUM(Vue_Stats.tot_vues) as tots_vues,
+SUM(tot_uniq_vues) as tots_uniq_vues
+FROM Challenges c 
+JOIN (SELECT challenge_id, SUM(total_submissions) as tot_subs, SUM(total_accepted_submissions) as tot_acc_subs FROM Submission_stats GROUP BY challenge_id) Sub_Stats on c.challenge_id = Sub_Stats.challenge_id 
+JOIN (SELECT challenge_id, SUM(total_views) as tot_vues, SUM(total_unique_views) as tot_uniq_vues FROM View_Stats GROUP BY challenge_id) Vue_Stats on c.challenge_id = Vue_Stats.challenge_id
+JOIN Colleges cl on cl.college_id = c.college_id
+JOIN Contests cs on cs.contest_id = cl.contest_id
+GROUP BY cs.contest_id, cs.hacker_id, cs.name
+HAVING tots_subs >0 or tots_acc_subs >0 or tots_vues >0 or tots_uniq_vues > 0
+ORDER BY cs.contest_id
+
+
+=============================================================================================
+
+
+Would work in new MYSQL but not on hackerrank
+SELECT s.submission_date, count(s.hacker_id), s.hacker_id, h.name
+FROM Submissions s JOIN Hackers h ON s.hacker_id = h.hacker_id
+GROUP BY s.submission_date, s.hacker_id
+HAVING count(s.hacker) in (SELECT count(*) FROM Submissions s1 WHERE s1.submission_date = s.submission_date GROUP BY s1.hacker_id ORDER BY s1.hacker_id LIMIT 1)
+ORDER BY s.submission_date
+
+
+Working solution from discussions
+select 
+submission_date ,
+
+( SELECT COUNT(distinct hacker_id)  
+ FROM Submissions s2  
+ WHERE s2.submission_date = s1.submission_date AND    (SELECT COUNT(distinct s3.submission_date) FROM      Submissions s3 WHERE s3.hacker_id = s2.hacker_id AND s3.submission_date < s1.submission_date) = dateDIFF(s1.submission_date , '2016-03-01')) ,
+
+(select hacker_id  from submissions s2 where s2.submission_date = s1.submission_date 
+group by hacker_id order by count(submission_id) desc , hacker_id limit 1) as shit,
+(select name from hackers where hacker_id = shit)
+from 
+(select distinct submission_date from submissions) s1
+group by submission_date
+
+=========================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

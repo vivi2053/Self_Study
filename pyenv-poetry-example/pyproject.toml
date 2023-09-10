@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "pyenv-poetry-example"
+version = "0.1.0"
+description = ""
+authors = ["codecreator2053 <54350201+codecreator2053@users.noreply.github.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+tqdm = "^4.62.3"
+
+[tool.poetry.dev-dependencies]
+autopep8 = "^1.6.0"
+flake8 = "^4.0.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
